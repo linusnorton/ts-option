@@ -92,7 +92,13 @@ export abstract class Option<A> {
    */
   toArray: Array<A>;
 
+  /**
+   * Performs a for-comprehension like flatMap and map operation using the given functions
+   */
+  abstract forComprehension(...fns: ((x: any) => Option<any>)[]): Option<any>;
+
 }
+
 
 export interface Matcher<A, B> {
   some: (_: A) => B;
@@ -156,59 +162,88 @@ export class Some<A> extends Option<A> {
   get toArray(): Array<A> {
     return [this._value];
   }
+  forComprehension(...fns: ((x: any) => Option<any>)[]): Option<any> {
+    let result: Option<any> = this;
+
+    for (let i = 0; i < fns.length - 1; i++) {
+      result = result.flatMap(fns[i]);
+    }
+
+    return result.map(fns[fns.length -1]);
+  }
 }
 
 export class None extends Option<any> {
   exists(p: (_: any) => boolean): boolean {
     return false;
   }
+
   filter(p: (_: any) => boolean): Option<any> {
     return this;
   }
+
   filterNot(p: (_: any) => boolean): Option<any> {
     return this;
   }
+
   flatMap<B>(f: (_: any) => Option<B>): Option<B> {
     return this as Option<B>;
   }
+
   fold<B>(ifEmpty: () => B): (f: (_: any) => B) => B {
     return () => ifEmpty();
   }
+
   forAll(p: (_: any) => boolean): boolean {
     return false;
   }
+
   forEach(f: (_: any) => any): void {
     // do nothing.
   }
+
   get get(): any {
     throw new Error('No such element.');
   }
+
   getOrElse(defaultValue: any | (() => any)): any {
     return typeof defaultValue === "function" ? defaultValue() : defaultValue;
   }
+
   get isDefined(): boolean {
     return false;
   }
+
   get isEmpty(): boolean {
     return true;
   }
+
   map<B>(f: (_: any) => B): Option<B> {
     return this as Option<B>;
   }
+
   match<B>(matcher: Matcher<any, B>): B {
     return matcher.none();
   }
+
   get nonEmpty(): boolean {
     return false;
   }
+
   orElse(alternative: () => Option<any>): Option<any> {
     return alternative();
   }
+
   get orNull(): any {
     return null;
   }
+
   get toArray(): Array<any> {
     return [];
+  }
+
+  forComprehension<B>(...fns: ((x: any) => Option<B>)[]): Option<B> {
+    return this;
   }
 }
 
